@@ -24,19 +24,35 @@ export function useWorker() {
     worker.onmessage = (event) => {
       const data = event.data;
 
-      switch (data.type) {
-        case "PROGRESS":
-          setProgress(data.progress);
-          setMessage(data.message);
-          break;
+      // progress
 
-        case "SUCCESS":
-          setResult(data);
-          break;
+      if (data.type === "PROGRESS") {
+        setProgress(data.progress);
 
-        case "ERROR":
-          setError(data.error);
-          break;
+        setMessage(data.message);
+      }
+
+      // success
+      else if (data.type === "SUCCESS") {
+        setProgress(100);
+
+        setMessage("Completed");
+
+        setResult(data);
+
+        setError("");
+      }
+
+      // error
+      else if (data.type === "ERROR") {
+        setError(data.error);
+
+        setMessage("Processing failed");
+      }
+
+      // cancelled
+      else if (data.type === "CANCELLED") {
+        setMessage("Processing cancelled");
       }
     };
 
@@ -45,22 +61,47 @@ export function useWorker() {
     };
   }, []);
 
-  const processZip = (file: File, settings: any) => {
-    setError("");
+  const resetState = () => {
+    setProgress(0);
+
+    setMessage("");
+
     setResult(null);
+
+    setError("");
+  };
+
+  const processZip = (file: File, settings: any) => {
+    // VERY IMPORTANT
+
+    resetState();
 
     workerRef.current?.postMessage({
       type: "START_PROCESSING",
+
       file,
+
       settings,
+    });
+  };
+
+  const cancelProcessing = () => {
+    workerRef.current?.postMessage({
+      type: "CANCEL_PROCESSING",
     });
   };
 
   return {
     processZip,
+
+    cancelProcessing,
+
     progress,
+
     message,
+
     result,
+
     error,
   };
 }

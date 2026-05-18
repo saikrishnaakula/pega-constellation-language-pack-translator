@@ -1,28 +1,24 @@
-import { AppSettings } from "../../types/settings";
+import { defaultSettings, AppSettings } from "./defaultSettings";
 
-const SETTINGS_KEY = "c11n-translator-settings";
-
-const DEFAULT_SETTINGS: AppSettings = {
-  translationMode: "fallback",
-  fallbackText: "",
-  darkMode: true,
-  googleApiKey: "",
-};
+const STORAGE_KEY = "c11n-settings";
 
 export function loadSettings(): AppSettings {
-  const raw = localStorage.getItem(SETTINGS_KEY);
-
-  if (!raw) {
-    return DEFAULT_SETTINGS;
-  }
-
   try {
-    return JSON.parse(raw);
+    const raw = localStorage.getItem(STORAGE_KEY);
+
+    if (!raw) {
+      return defaultSettings;
+    }
+
+    return {
+      ...defaultSettings,
+      ...JSON.parse(raw),
+    };
   } catch {
-    return DEFAULT_SETTINGS;
+    return defaultSettings;
   }
 }
 
 export function saveSettings(settings: AppSettings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }

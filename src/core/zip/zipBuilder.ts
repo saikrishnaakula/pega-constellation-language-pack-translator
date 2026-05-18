@@ -15,8 +15,7 @@ import {
   serializeJson,
 } from "../processors/jsonProcessor";
 
-import { ProcessorResult }
-  from "../../types/processor";
+import { ProcessorResult } from "../../types/processor";
 
 export async function buildTranslatedZip({
   processedFiles,
@@ -26,111 +25,60 @@ export async function buildTranslatedZip({
 }: {
   processedFiles: ProcessorResult[];
 
-  translationMap:
-    Map<string, string>;
+  translationMap: Map<string, string>;
 
   originalZipFile: File;
 
   locale: string;
 }) {
-  const originalZip =
-    await JSZip.loadAsync(
-      originalZipFile
-    );
+  const originalZip = await JSZip.loadAsync(originalZipFile);
 
   const newZip = new JSZip();
 
-  const handledPaths =
-    new Set<string>();
+  const handledPaths = new Set<string>();
 
   for (const file of processedFiles) {
-    handledPaths.add(
-      file.filePath
-    );
+    handledPaths.add(file.filePath);
 
-    if (
-      file.fileType === "xlsx"
-    ) {
-      const workbook =
-        applyExcelTranslations(
-          file.originalContent as any,
-          locale,
-          translationMap
-        );
-
-      const serialized =
-        serializeExcel(
-          workbook
-        );
-
-      newZip.file(
-        file.filePath,
-        serialized
+    if (file.fileType === "xlsx") {
+      const workbook = applyExcelTranslations(
+        file.originalContent as any,
+        locale,
+        translationMap
       );
-    }
 
-    else if (
-      file.fileType === "html"
-    ) {
-      const updated =
-        applyHtmlTranslations(
-          file.originalContent,
-          translationMap
-        );
+      const serialized = serializeExcel(workbook);
 
-      const serialized =
-        serializeHtml(
-          updated
-        );
-
-      newZip.file(
-        file.filePath,
-        serialized
+      newZip.file(file.filePath, serialized);
+    } else if (file.fileType === "html") {
+      const updated = applyHtmlTranslations(
+        file.originalContent as any,
+        translationMap
       );
-    }
 
-    else if (
-      file.fileType === "json"
-    ) {
-      const updated =
-        applyJsonTranslations(
-          file.originalContent,
-          translationMap
-        );
+      const serialized = serializeHtml(updated);
 
-      const serialized =
-        serializeJson(
-          updated
-        );
-
-      newZip.file(
-        file.filePath,
-        serialized
+      newZip.file(file.filePath, serialized);
+    } else if (file.fileType === "json") {
+      const updated = applyJsonTranslations(
+        file.originalContent,
+        translationMap
       );
+
+      const serialized = serializeJson(updated);
+
+      newZip.file(file.filePath, serialized);
     }
   }
 
-  for (const entry of Object.values(
-    originalZip.files
-  )) {
-    if (
-      entry.dir ||
-      handledPaths.has(
-        entry.name
-      )
-    ) {
+  for (const entry of Object.values(originalZip.files)) {
+    if (entry.dir || handledPaths.has(entry.name)) {
       continue;
     }
 
-    const content =
-      await entry.async(
-        "uint8array"
-      );
+    const content = await entry.async("uint8array");
 
-    newZip.file(
-      entry.name,
-      content
-    );
+    newZip.file(entry.name, content);
   }
 
   return newZip.generateAsync({

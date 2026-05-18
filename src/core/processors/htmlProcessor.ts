@@ -1,131 +1,148 @@
-import {
-  XMLParser,
-  XMLBuilder,
-} from "fast-xml-parser";
+import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
-import {
-  ProcessorResult,
-  TranslationUnit,
-} from "../../types/processor";
+import { ProcessorResult, TranslationUnit } from "../../types/processor";
+
+const ignoredTags = ["script", "style", "code", "pre"];
 
 export async function processHtmlFile(
   html: string,
   filePath: string
 ): Promise<ProcessorResult> {
+  // VERY IMPORTANT
+  // wrap loose html
+
+  const wrapped = `<root>${html}</root>`;
+
   const parser = new XMLParser({
     ignoreAttributes: false,
+
+    preserveOrder: true,
+
     trimValues: true,
+
+    alwaysCreateTextNode: true,
+
+    textNodeName: "#text",
   });
 
-  const parsed = parser.parse(html);
+  const parsed = parser.parse(wrapped);
 
   const units: TranslationUnit[] = [];
 
-  walkObject(parsed, units);
+  walkNodes(parsed, units);
 
   return {
     filePath,
+
     fileType: "html",
+
     units,
+
     originalContent: parsed,
   };
 }
 
-function walkObject(
-  obj: any,
-  units: TranslationUnit[],
-  path = ""
-) {
-  if (
-    !obj ||
-    typeof obj !== "object"
-  ) {
+function walkNodes(nodes: any[], units: TranslationUnit[]) {
+  if (!Array.isArray(nodes)) {
     return;
   }
 
-  for (const key of Object.keys(obj)) {
-    const value = obj[key];
+  nodes.forEach((node) => {
+    Object.entries(node).forEach(([key, value]: any) => {
+      const lower = key.toLowerCase();
 
-    if (
-      key === "instructionText" &&
-      typeof value === "string" &&
-      value.trim()
-    ) {
-      units.push({
-        key:
-          `${path}/${key}/${units.length}`,
+      // ignore tags
 
-        source: value,
-      });
-    }
+      if (ignoredTags.includes(lower)) {
+        return;
+      }
 
-    if (
-      typeof value === "object"
-    ) {
-      walkObject(
-        value,
-        units,
-        `${path}/${key}`
-      );
-    }
-  }
+      // text node
+
+      if (key === "#text") {
+        const text = value?.trim?.();
+
+        if (text && text.length > 1) {
+          units.push({
+            key: crypto.randomUUID(),
+
+            source: text,
+          });
+        }
+      }
+
+      // recurse
+
+      if (Array.isArray(value)) {
+        walkNodes(value, units);
+      }
+    });
+  });
 }
 
 export function applyHtmlTranslations(
-  obj: any,
+  parsed: any[],
   translationMap: Map<string, string>
 ) {
-  walkAndReplace(
-    obj,
-    translationMap
-  );
+  replaceNodes(parsed, translationMap);
 
-  return obj;
+  return parsed;
 }
 
-function walkAndReplace(
-  obj: any,
-  translationMap: Map<string, string>
-) {
-  if (
-    !obj ||
-    typeof obj !== "object"
-  ) {
+function replaceNodes(nodes: any[], translationMap: Map<string, string>) {
+  if (!Array.isArray(nodes)) {
     return;
   }
 
-  for (const key of Object.keys(obj)) {
-    const value = obj[key];
+  nodes.forEach((node) => {
+    Object.entries(node).forEach(([key, value]: any) => {
+      const lower = key.toLowerCase();
 
-    if (
-      key === "instructionText" &&
-      typeof value === "string"
-    ) {
-      obj[key] =
-        translationMap.get(
-          value
-        ) || value;
-    }
+      if (ignoredTags.includes(lower)) {
+        return;
+      }
 
-    if (
-      typeof value === "object"
-    ) {
-      walkAndReplace(
-        value,
-        translationMap
-      );
-    }
-  }
+      // replace text
+
+      if (key === "#text") {
+        const original = value?.trim?.();
+
+        if (!original) {
+          return;
+        }
+
+        const translated = translationMap.get(original);
+
+        if (translated) {
+          node[key] = value.replace(original, translated);
+        }
+      }
+
+      // recurse
+
+      if (Array.isArray(value)) {
+        replaceNodes(value, translationMap);
+      }
+    });
+  });
 }
 
-export function serializeHtml(
-  parsed: any
-) {
-  const builder =
-    new XMLBuilder({
-      ignoreAttributes: false,
-      format: true,
-    });
+export function serializeHtml(parsed: any[]) {
+  const builder = new XMLBuilder({
+    ignoreAttributes: false,
 
-  return builder.build(parsed);
+    preserveOrder: true,
+
+    format: true,
+  });
+
+  let output = builder.build(parsed);
+
+  // remove wrapper root
+
+  output = output.replace(/^<root>/, "");
+
+  output = output.replace(/<\/root>$/, "");
+
+  return output;
 }

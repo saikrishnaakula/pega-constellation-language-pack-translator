@@ -24,7 +24,7 @@ export default function SettingsPanel({ settings, onChange }: Props) {
         >
           <option value="fallback">Fallback</option>
 
-          <option value="google">Google Translate</option>
+          <option value="google">Chrome Translator API</option>
         </select>
       </div>
 
@@ -38,22 +38,6 @@ export default function SettingsPanel({ settings, onChange }: Props) {
             onChange({
               ...settings,
               fallbackText: e.target.value,
-            })
-          }
-          className="w-full rounded border px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block">Google API Key</label>
-
-        <input
-          type="password"
-          value={settings.googleApiKey}
-          onChange={(e) =>
-            onChange({
-              ...settings,
-              googleApiKey: e.target.value,
             })
           }
           className="w-full rounded border px-3 py-2"

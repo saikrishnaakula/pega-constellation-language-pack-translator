@@ -10,4 +10,4 @@ export interface TranslationResult {
   translated: string;
 }
 
-export type TranslationMode = "google" | "fallback";
+export type TranslationMode = "chrome" | "google-free" | "fallback";

@@ -75,9 +75,7 @@ async function processJob(data: any) {
     message: "Extracting locale...",
   });
 
-  const { locale, targetLang } = extractLocale(
-    data.file.name
-  );
+  const { locale, targetLang } = extractLocale(data.file.name);
 
   ensureNotCancelled();
 
@@ -105,10 +103,7 @@ async function processJob(data: any) {
     message: "Processing supported files...",
   });
 
-  const processed = await processZipFiles(
-    data.file,
-    locale
-  );
+  const processed = await processZipFiles(data.file, locale);
 
   ensureNotCancelled();
 
@@ -131,11 +126,8 @@ async function processJob(data: any) {
 
     mode: data.settings.translationMode,
 
-    fallbackText:
-      data.settings.fallbackText,
-
-    apiKey:
-      data.settings.googleApiKey,
+    fallbackText: data.settings.fallbackText,
+    fallbackPosition: data.settings.fallbackPosition,
   });
 
   ensureNotCancelled();
@@ -146,20 +138,17 @@ async function processJob(data: any) {
     message: "Building translated ZIP...",
   });
 
-  const translationMap = createTranslationMap(
-    translations
-  );
+  const translationMap = createTranslationMap(translations);
 
-  const translatedZip =
-    await buildTranslatedZip({
-      processedFiles: processed,
+  const translatedZip = await buildTranslatedZip({
+    processedFiles: processed,
 
-      translationMap,
+    translationMap,
 
-      originalZipFile: data.file,
+    originalZipFile: data.file,
 
-      locale,
-    });
+    locale,
+  });
 
   ensureNotCancelled();
 
@@ -185,6 +174,8 @@ async function processJob(data: any) {
     translations,
 
     translatedZip,
+
+    originalFileName: data.file.name,
   });
 
   cleanupMemory();
@@ -211,17 +202,14 @@ self.onmessage = async (event) => {
       return;
     }
 
-    if (
-      data.type !== "START_PROCESSING"
-    ) {
+    if (data.type !== "START_PROCESSING") {
       return;
     }
 
     if (activeJobId) {
       self.postMessage({
         type: "ERROR",
-        error:
-          "Another ZIP is already being processed.",
+        error: "Another ZIP is already being processed.",
       });
 
       return;
@@ -234,17 +222,12 @@ self.onmessage = async (event) => {
     startTimeoutWatchdog(activeJobId);
 
     processJob(data).catch((error) => {
-      console.error(
-        "Worker processing failure:",
-        error
-      );
+      console.error("Worker processing failure:", error);
 
       self.postMessage({
         type: "ERROR",
         error:
-          error instanceof Error
-            ? error.message
-            : "Unknown processing error",
+          error instanceof Error ? error.message : "Unknown processing error",
       });
 
       cleanupMemory();
@@ -252,17 +235,12 @@ self.onmessage = async (event) => {
       resetWorkerState();
     });
   } catch (error) {
-    console.error(
-      "Worker fatal error:",
-      error
-    );
+    console.error("Worker fatal error:", error);
 
     self.postMessage({
       type: "ERROR",
       error:
-        error instanceof Error
-          ? error.message
-          : "Worker crashed unexpectedly",
+        error instanceof Error ? error.message : "Worker crashed unexpectedly",
     });
 
     cleanupMemory();
@@ -272,15 +250,11 @@ self.onmessage = async (event) => {
 };
 
 self.onerror = (event) => {
-  console.error(
-    "Unhandled worker error:",
-    event
-  );
+  console.error("Unhandled worker error:", event);
 
   self.postMessage({
     type: "ERROR",
-    error:
-      "Worker encountered an unexpected runtime error.",
+    error: "Worker encountered an unexpected runtime error.",
   });
 
   cleanupMemory();
@@ -289,16 +263,11 @@ self.onerror = (event) => {
 };
 
 self.onunhandledrejection = (event) => {
-  console.error(
-    "Unhandled worker rejection:",
-    event.reason
-  );
+  console.error("Unhandled worker rejection:", event.reason);
 
   self.postMessage({
     type: "ERROR",
-    error:
-      event.reason?.message ||
-      "Unhandled async worker error",
+    error: event.reason?.message || "Unhandled async worker error",
   });
 
   cleanupMemory();

@@ -1,7 +1,6 @@
 import { AppSettings } from "./settings";
 import { ExtractedText, TranslationResult } from "./translation";
-import { ProcessorResult }
-  from "./processor";
+import { ProcessorResult } from "./processor";
 
 export interface StartProcessingMessage {
   type: "START_PROCESSING";
@@ -20,9 +19,11 @@ export interface SuccessMessage {
   locale: string;
   targetLang: string;
   files: string[];
-processed: ProcessorResult[];  uniqueCount: number;
+  processed: ProcessorResult[];
+  uniqueCount: number;
   translations: TranslationResult[];
   translatedZip: Blob;
+  originalFileName?: string;
 }
 
 export interface ErrorMessage {

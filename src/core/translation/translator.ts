@@ -1,72 +1,56 @@
-import {
-  getCachedTranslation,
-  setCachedTranslation,
-} from "../cache/cacheManager";
+import { translateWithChrome } from "./chromeTranslator";
+
+import { translateWithGoogleFree } from "./googleFreeTranslator";
 
 import { fallbackTranslate } from "./fallbackTranslator";
-import { googleTranslate } from "./googleTranslator";
 
-import { TranslationMode, TranslationResult } from "../../types/translation";
-
-interface Params {
-  texts: string[];
-  targetLang: string;
-  mode: TranslationMode;
-  fallbackText?: string;
-  apiKey?: string;
-}
-
-const BATCH_SIZE = 50;
+import { TranslationMode } from "../../types/translation";
 
 export async function translateTexts({
   texts,
   targetLang,
   mode,
   fallbackText,
-  apiKey,
-}: Params): Promise<TranslationResult[]> {
-  const results: TranslationResult[] = [];
+  fallbackPosition,
+}: {
+  texts: string[];
 
-  const uncached: string[] = [];
+  targetLang: string;
 
-  for (const text of texts) {
-    const cacheKey = `${targetLang}:${text}`;
+  mode: TranslationMode;
 
-    const cached = await getCachedTranslation(cacheKey);
+  fallbackText?: string;
 
-    if (cached) {
-      results.push({
-        source: text,
-        translated: cached,
-      });
-    } else {
-      uncached.push(text);
-    }
+  fallbackPosition?: "append" | "prepend";
+}) {
+  let translated: string[] = [];
+
+  // Chrome Translator
+
+  if (mode === "chrome") {
+    translated = await translateWithChrome(texts, targetLang);
   }
 
-  for (let i = 0; i < uncached.length; i += BATCH_SIZE) {
-    const batch = uncached.slice(i, i + BATCH_SIZE);
-
-    let translated: TranslationResult[] = [];
-
-    if (mode === "google") {
-      translated = await googleTranslate({
-        texts: batch,
-        targetLang,
-        apiKey: apiKey || "",
-      });
-    } else {
-      translated = await fallbackTranslate(batch, targetLang, fallbackText);
-    }
-
-    for (const item of translated) {
-      const cacheKey = `${targetLang}:${item.source}`;
-
-      await setCachedTranslation(cacheKey, item.translated);
-
-      results.push(item);
-    }
+  // Google Free
+  else if (mode === "google-free") {
+    translated = await translateWithGoogleFree(texts, targetLang);
   }
 
-  return results;
+  // Fallback
+  else if (mode === "fallback") {
+    translated = fallbackTranslate(
+      texts,
+      targetLang,
+      fallbackText,
+      fallbackPosition
+    );
+  } else {
+    translated = texts;
+  }
+
+  return texts.map((source, index) => ({
+    source,
+
+    translated: translated[index],
+  }));
 }

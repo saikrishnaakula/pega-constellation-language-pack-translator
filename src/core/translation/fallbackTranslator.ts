@@ -1,11 +1,16 @@
-export async function fallbackTranslate(
+export function fallbackTranslate(
   texts: string[],
   targetLang: string,
-  fallbackText?: string
+  fallbackText?: string,
+  fallbackPosition: "append" | "prepend" = "append"
 ) {
-  return texts.map((text) => ({
-    source: text,
+  return texts.map((text) => {
+    const suffix = fallbackText?.trim() || `[${targetLang}]`;
 
-    translated: fallbackText?.trim() ? fallbackText : `${text} [${targetLang}]`,
-  }));
+    if (fallbackPosition === "prepend") {
+      return `${suffix} ${text}`;
+    }
+
+    return `${text} ${suffix}`;
+  });
 }
