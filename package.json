@@ -16,14 +16,14 @@
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "dom-serializer": "^3.1.1",
     "fast-xml-parser": "^5.8.0",
+    "htmlparser2": "^12.0.0",
     "idb-keyval": "^6.2.2",
     "jszip": "^3.10.1",
-    "linkedom": "^0.18.12",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "xlsx": "^0.18.5",
-    "zustand": "^5.0.13"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

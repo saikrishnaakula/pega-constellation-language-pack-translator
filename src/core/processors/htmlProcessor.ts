@@ -1,4 +1,6 @@
-import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import { parseDocument } from "htmlparser2";
+
+import render from "dom-serializer";
 
 import { ProcessorResult, TranslationUnit } from "../../types/processor";
 
@@ -8,28 +10,11 @@ export async function processHtmlFile(
   html: string,
   filePath: string
 ): Promise<ProcessorResult> {
-  // VERY IMPORTANT
-  // wrap loose html
-
-  const wrapped = `<root>${html}</root>`;
-
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-
-    preserveOrder: true,
-
-    trimValues: true,
-
-    alwaysCreateTextNode: true,
-
-    textNodeName: "#text",
-  });
-
-  const parsed = parser.parse(wrapped);
+  const document = parseDocument(html);
 
   const units: TranslationUnit[] = [];
 
-  walkNodes(parsed, units);
+  walkNodes(document.children, units);
 
   return {
     filePath,
@@ -38,111 +23,83 @@ export async function processHtmlFile(
 
     units,
 
-    originalContent: parsed,
+    originalContent: document,
   };
 }
 
 function walkNodes(nodes: any[], units: TranslationUnit[]) {
-  if (!Array.isArray(nodes)) {
-    return;
-  }
-
   nodes.forEach((node) => {
-    Object.entries(node).forEach(([key, value]: any) => {
-      const lower = key.toLowerCase();
+    // text node
 
-      // ignore tags
+    if (node.type === "text") {
+      const text = node.data?.trim();
 
-      if (ignoredTags.includes(lower)) {
-        return;
+      if (text && text.length > 1) {
+        units.push({
+          key: crypto.randomUUID(),
+
+          source: text,
+        });
       }
+    }
 
-      // text node
+    // ignore dangerous tags
 
-      if (key === "#text") {
-        const text = value?.trim?.();
+    if (node.type === "tag" && ignoredTags.includes(node.name)) {
+      return;
+    }
 
-        if (text && text.length > 1) {
-          units.push({
-            key: crypto.randomUUID(),
+    // recurse
 
-            source: text,
-          });
-        }
-      }
-
-      // recurse
-
-      if (Array.isArray(value)) {
-        walkNodes(value, units);
-      }
-    });
+    if (node.children?.length) {
+      walkNodes(node.children, units);
+    }
   });
 }
 
 export function applyHtmlTranslations(
-  parsed: any[],
+  document: any,
   translationMap: Map<string, string>
 ) {
-  replaceNodes(parsed, translationMap);
+  replaceNodes(document.children, translationMap);
 
-  return parsed;
+  return document;
 }
 
 function replaceNodes(nodes: any[], translationMap: Map<string, string>) {
-  if (!Array.isArray(nodes)) {
-    return;
-  }
-
   nodes.forEach((node) => {
-    Object.entries(node).forEach(([key, value]: any) => {
-      const lower = key.toLowerCase();
+    // text replacement
 
-      if (ignoredTags.includes(lower)) {
+    if (node.type === "text") {
+      const original = node.data?.trim();
+
+      if (!original) {
         return;
       }
 
-      // replace text
+      const translated = translationMap.get(original);
 
-      if (key === "#text") {
-        const original = value?.trim?.();
-
-        if (!original) {
-          return;
-        }
-
-        const translated = translationMap.get(original);
-
-        if (translated) {
-          node[key] = value.replace(original, translated);
-        }
+      if (translated) {
+        node.data = node.data.replace(original, translated);
       }
+    }
 
-      // recurse
+    // ignore dangerous tags
 
-      if (Array.isArray(value)) {
-        replaceNodes(value, translationMap);
-      }
-    });
+    if (node.type === "tag" && ignoredTags.includes(node.name)) {
+      return;
+    }
+
+    // recurse
+
+    if (node.children?.length) {
+      replaceNodes(node.children, translationMap);
+    }
   });
 }
 
-export function serializeHtml(parsed: any[]) {
-  const builder = new XMLBuilder({
-    ignoreAttributes: false,
-
-    preserveOrder: true,
-
-    format: true,
+export function serializeHtml(document: any) {
+  return render(document, {
+    encodeEntities: false,
   });
-
-  let output = builder.build(parsed);
-
-  // remove wrapper root
-
-  output = output.replace(/^<root>/, "");
-
-  output = output.replace(/<\/root>$/, "");
-
-  return output;
 }

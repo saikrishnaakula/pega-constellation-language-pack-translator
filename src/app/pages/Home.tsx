@@ -55,37 +55,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="mx-auto max-w-7xl px-6 py-2">
         {/* Header */}
 
         <div className="mb-12">
-          <div className="inline-flex items-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-1 text-xs font-medium text-cyan-300">
-            Browser-Based Localization
-          </div>
+          <h2 className="mt-5 text-3xl font-black tracking-tight">
+            Constellation Language Pack Translator
+          </h2>
 
-          <h1 className="mt-5 text-5xl font-black tracking-tight">
-            c11n Language Pack Translator
-          </h1>
-
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-neutral-400">
+          <p className="mt-4 max-w-5xl text-lg leading-8 text-neutral-400">
             Translate XLSX, HTML/XML, and JSON localization packages directly in
             the browser while preserving ZIP structure.
           </p>
         </div>
-
-        {settings.translationMode === "chrome" && !chromeSupported && (
-          <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
-            Chrome Translator API is not available in this browser.
-            <div className="mt-2 text-yellow-300/80">
-              Recommended:
-              <ul className="mt-2 list-disc pl-5">
-                <li>Latest Chrome or Chromium browser</li>
-
-                <li>AI experimental features may need to be enabled</li>
-              </ul>
-            </div>
-          </div>
-        )}
 
         {/* Top Row */}
 
@@ -127,6 +109,19 @@ export default function Home() {
                   <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
                     Google Free Translate endpoint is unofficial and may be
                     rate-limited or unstable for large translation batches.
+                  </div>
+                )}
+                {settings.translationMode === "chrome" && !chromeSupported && (
+                  <div className="mt-4 rounded-2xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+                    Chrome Translator API is not available in this browser.
+                    <div className="mt-2 text-yellow-300/80">
+                      Recommended:
+                      <ul className="mt-2 list-disc pl-5">
+                        <li>Latest Chrome or Chromium browser</li>
+
+                        <li>AI experimental features may need to be enabled</li>
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
@@ -304,6 +299,18 @@ export default function Home() {
               </button>
             )}
           </div>
+        </div>
+      </div>
+      {/* Footer */}
+
+      <div className="mt-16 border-t border-white/10 pt-8 pb-8 text-center">
+        <div className="text-sm text-neutral-500">
+          Made with
+          <span className="mx-1 text-red-400">♥</span>
+          by
+          <span className="ml-1 font-medium text-cyan-300">
+            Sai Krishna Akula
+          </span>
         </div>
       </div>
     </div>
