@@ -1,7 +1,7 @@
 {
   "name": "pega-constellation-language-pack-translator",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://saikrishnaakula.github.io/constellation-language-pack-translator",
   "type": "module",
   "scripts": {
@@ -21,6 +21,7 @@
     "htmlparser2": "^12.0.0",
     "idb-keyval": "^6.2.2",
     "jszip": "^3.10.1",
+    "p-limit": "^7.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "xlsx": "^0.18.5"
