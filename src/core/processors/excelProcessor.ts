@@ -111,5 +111,7 @@ export function serializeExcel(
   return XLSX.write(workbook, {
     type: "array",
     bookType: "xlsx",
+    compression: true,
+    bookSST: true,
   });
 }
